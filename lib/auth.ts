@@ -1,10 +1,7 @@
 // lib/auth.ts
 
 import { supabase } from '@/lib/supabase'
-import { createSupabaseAdminClient } from '@/lib/supabase'
 
-
-// ─── Types ────────────────────────────────────────────────────────────────
 export type SignUpPayload = {
   email: string
   password: string
@@ -29,60 +26,38 @@ export type AuthResult = {
   error: string | null
 }
 
-// ─── Inscription pharmacien ───────────────────────────────────────────────
+// ─── Inscription via Route Handler (admin client côté serveur) ────────────
 export const signUpPharmacist = async (
   payload: SignUpPayload
 ): Promise<AuthResult> => {
-  // 1. Créer le compte auth Supabase
-  const { data, error: authError } = await supabase.auth.signUp({
-    email: payload.email,
-    password: payload.password,
-    options: {
-      data: {
-        full_name: payload.full_name,
-        phone: payload.phone,
-        role: 'pharmacist',
-      },
-    },
-  })
-
-  if (authError) {
-    return { success: false, error: authError.message }
-  }
-
-  if (!data.user) {
-    return { success: false, error: 'Erreur lors de la création du compte' }
-  }
-
-  // 2. Créer la pharmacie avec status pending
-  const { data: pharmacy, error: pharmacyError } = await supabase
-    .from('pharmacies')
-    .insert({
-      name: payload.pharmacy.name,
-      address: payload.pharmacy.address,
-      phone: payload.pharmacy.phone,
-      location: `SRID=4326;POINT(${payload.pharmacy.lng} ${payload.pharmacy.lat})`,
-      status: 'pending',
-      user_id: data.user.id,
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     })
-    .select('id')
-    .single()
 
-  if (pharmacyError) {
-    return { success: false, error: pharmacyError.message }
+    const json = await res.json()
+
+    if (!res.ok) {
+      return { success: false, error: json.error ?? 'Erreur inscription' }
+    }
+
+    // Connecter automatiquement après inscription
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: payload.email,
+      password: payload.password,
+    })
+
+    if (signInError) {
+      // Compte créé mais connexion auto échouée → pas bloquant
+      console.warn('[signUpPharmacist] auto sign-in failed:', signInError.message)
+    }
+
+    return { success: true, error: null }
+  } catch (err) {
+    return { success: false, error: 'Erreur réseau' }
   }
-
-  // 3. Lier la pharmacie au profil
-  const { error: profileError } = await supabase
-    .from('pharmacist_profiles')
-    .update({ pharmacy_id: (pharmacy as any).id })
-    .eq('id', data.user.id)
-
-  if (profileError) {
-    return { success: false, error: profileError.message }
-  }
-
-  return { success: true, error: null }
 }
 
 // ─── Connexion ────────────────────────────────────────────────────────────
@@ -106,7 +81,7 @@ export const signOut = async (): Promise<void> => {
   await supabase.auth.signOut()
 }
 
-// ─── Session courante (client) ────────────────────────────────────────────
+// ─── Session courante ─────────────────────────────────────────────────────
 export const getSession = async () => {
   const { data } = await supabase.auth.getSession()
   return data.session
@@ -142,10 +117,13 @@ export const getMyPharmacy = async () => {
 
 // ─── Vérifier si admin ────────────────────────────────────────────────────
 export const isAdmin = async (): Promise<boolean> => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
   const { data } = await supabase
     .from('pharmacist_profiles')
     .select('role')
-    .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
+    .eq('id', user.id)
     .single()
 
   return (data as any)?.role === 'admin'
