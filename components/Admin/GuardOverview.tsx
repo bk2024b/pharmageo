@@ -86,7 +86,7 @@ export const GuardOverview = () => {
                   <span className="text-sm font-semibold text-gray-900">{g.pharmacy.name}</span>
                   <span className="text-xs text-gray-500">{g.pharmacy.address}</span>
                   {g.pharmacy.phone && (
-                    
+                    <a
                       href={`tel:${g.pharmacy.phone}`}
                       className="text-xs text-green-700 hover:underline"
                     >
