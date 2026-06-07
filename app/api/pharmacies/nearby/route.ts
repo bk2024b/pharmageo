@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getNearbyPharmacies, getGuardPharmacies } from '@/lib/pharmacy'
 import { isValidCoords, DEFAULT_RADIUS_M } from '@/lib/geo'
-
+import { createSupabaseServerClient } from '@/lib/supabase.server'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

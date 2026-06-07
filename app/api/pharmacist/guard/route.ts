@@ -1,8 +1,8 @@
 // app/api/pharmacist/guard/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase'
-
+import { createSupabaseAdminClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase.server'
 // GET → créneaux de garde d'une pharmacie
 export async function GET(request: NextRequest) {
   try {

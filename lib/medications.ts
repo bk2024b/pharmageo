@@ -1,6 +1,7 @@
 // lib/medications.ts
 
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase'
+import { createSupabaseAdminClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase.server'
 import type { Medication, PharmacyInventory, MedicationRow, InventoryRow } from '@/types'
 
 // ─── Helper ───────────────────────────────────────────────────────────────

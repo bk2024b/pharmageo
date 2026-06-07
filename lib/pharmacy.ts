@@ -1,6 +1,7 @@
 // lib/pharmacy.ts
 
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase'
+import { createSupabaseAdminClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase.server'
 import type { Pharmacy, GuardSchedule, PharmacyRow } from '@/types'
 import { DEFAULT_RADIUS_M } from '@/lib/geo'
 
