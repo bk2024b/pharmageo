@@ -1,13 +1,22 @@
 // lib/medications.ts
 
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase'
-import { Medication, PharmacyInventory } from '@/types'
+import type { Medication, PharmacyInventory, MedicationRow, InventoryRow } from '@/types'
 
-// ─── Recherche full-text sur les médicaments ──────────────────────────────
+// ─── Helper ───────────────────────────────────────────────────────────────
+const rowToMedication = (row: MedicationRow): Medication => ({
+  id: row.id,
+  name: row.name,
+  dci: row.dci,
+  category: row.category,
+  otc: row.otc,
+})
+
+// ─── Recherche full-text ──────────────────────────────────────────────────
 export const searchMedications = async (
   query: string
-): Promise<(Medication & { inventory: PharmacyInventory[] })[]> => {
-  const supabase = createSupabaseServerClient()
+): Promise<(Medication & { inventory: InventoryRow[] })[]> => {
+  const supabase = await createSupabaseServerClient()
 
   if (!query || query.trim().length < 2) return []
 
@@ -35,21 +44,19 @@ export const searchMedications = async (
     return []
   }
 
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    dci: row.dci,
-    category: row.category,
-    otc: row.otc,
+  const rows = data as unknown as (MedicationRow & { inventory: InventoryRow[] })[]
+
+  return rows.map((row) => ({
+    ...rowToMedication(row),
     inventory: row.inventory ?? [],
   }))
 }
 
-// ─── Médicaments disponibles dans une pharmacie précise ───────────────────
+// ─── Médicaments d'une pharmacie ──────────────────────────────────────────
 export const getMedicationsByPharmacy = async (
   pharmacyId: string
 ): Promise<(PharmacyInventory & { medication: Medication })[]> => {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from('pharmacy_inventory')
@@ -75,20 +82,22 @@ export const getMedicationsByPharmacy = async (
     return []
   }
 
-  return (data ?? []).map((row: any) => ({
+  const rows = data as unknown as (InventoryRow & { medication: MedicationRow })[]
+
+  return rows.map((row) => ({
     pharmacy_id: row.pharmacy_id,
     medication_id: row.medication_id,
     quantity: row.quantity,
     updated_at: row.updated_at,
-    medication: row.medication,
+    medication: rowToMedication(row.medication),
   }))
 }
 
-// ─── Pharmacies qui ont un médicament donné en stock ──────────────────────
+// ─── Pharmacies pour un médicament ───────────────────────────────────────
 export const getPharmaciesForMedication = async (
   medicationId: string
-): Promise<PharmacyInventory[]> => {
-  const supabase = createSupabaseServerClient()
+): Promise<(InventoryRow & { pharmacy: Record<string, unknown> })[]> => {
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from('pharmacy_inventory')
@@ -114,14 +123,12 @@ export const getPharmaciesForMedication = async (
     return []
   }
 
-  return data ?? []
+  return data as unknown as (InventoryRow & { pharmacy: Record<string, unknown> })[]
 }
 
-// ─── Détail d'un médicament par ID ────────────────────────────────────────
-export const getMedicationById = async (
-  id: string
-): Promise<Medication | null> => {
-  const supabase = createSupabaseServerClient()
+// ─── Médicament par ID ────────────────────────────────────────────────────
+export const getMedicationById = async (id: string): Promise<Medication | null> => {
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from('medications')
@@ -134,10 +141,10 @@ export const getMedicationById = async (
     return null
   }
 
-  return data
+  return rowToMedication(data as unknown as MedicationRow)
 }
 
-// ─── Mettre à jour le stock (admin / pharmacien) ──────────────────────────
+// ─── Upsert stock (admin) ─────────────────────────────────────────────────
 export const upsertInventory = async (payload: {
   pharmacy_id: string
   medication_id: string
@@ -190,5 +197,5 @@ export const createMedication = async (payload: {
     return null
   }
 
-  return data
+  return rowToMedication(data as unknown as MedicationRow)
 }

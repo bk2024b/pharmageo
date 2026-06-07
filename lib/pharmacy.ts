@@ -1,10 +1,9 @@
 // lib/pharmacy.ts
 
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase'
-import { Pharmacy, GuardSchedule } from '@/types'
+import type { Pharmacy, GuardSchedule, PharmacyRow } from '@/types'
 import { DEFAULT_RADIUS_M } from '@/lib/geo'
 
-// ─── Helper : parser la geography PostGIS → { lat, lng } ──────────────────
 const parseLocation = (raw: unknown): { lat: number; lng: number } => {
   if (typeof raw === 'object' && raw !== null) {
     const obj = raw as Record<string, unknown>
@@ -16,13 +15,22 @@ const parseLocation = (raw: unknown): { lat: number; lng: number } => {
   return { lat: 0, lng: 0 }
 }
 
-// ─── Pharmacies proches (PostGIS ST_DWithin) ───────────────────────────────
+const rowToPharmacy = (row: PharmacyRow): Pharmacy => ({
+  id: row.id,
+  name: row.name,
+  address: row.address,
+  phone: row.phone,
+  location: parseLocation(row.location),
+  created_at: row.created_at,
+})
+
+// ─── Pharmacies proches ───────────────────────────────────────────────────
 export const getNearbyPharmacies = async (
   lat: number,
   lng: number,
   radiusMeters: number = DEFAULT_RADIUS_M
 ): Promise<Pharmacy[]> => {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase.rpc('get_nearby_pharmacies', {
     user_lat: lat,
@@ -35,7 +43,18 @@ export const getNearbyPharmacies = async (
     return []
   }
 
-  return (data ?? []).map((row: any) => ({
+  const rows = (data ?? []) as unknown as {
+    id: string
+    name: string
+    address: string
+    phone: string | null
+    lat: number
+    lng: number
+    created_at: string
+    distance_meters: number
+  }[]
+
+  return rows.map((row) => ({
     id: row.id,
     name: row.name,
     address: row.address,
@@ -47,9 +66,9 @@ export const getNearbyPharmacies = async (
   }))
 }
 
-// ─── Pharmacies de garde actives en ce moment ─────────────────────────────
+// ─── Pharmacies de garde ──────────────────────────────────────────────────
 export const getGuardPharmacies = async (): Promise<(GuardSchedule & { pharmacy: Pharmacy })[]> => {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const now = new Date().toISOString()
 
   const { data, error } = await supabase
@@ -77,22 +96,32 @@ export const getGuardPharmacies = async (): Promise<(GuardSchedule & { pharmacy:
     return []
   }
 
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    pharmacy_id: row.pharmacy_id,
-    starts_at: row.starts_at,
-    ends_at: row.ends_at,
-    pharmacy: {
-      ...row.pharmacy,
-      location: parseLocation(row.pharmacy.location),
-      is_on_guard: true,
-    },
-  }))
+  // Supabase retourne pharmacy comme tableau sur les jointures — on prend [0]
+  const rows = (data ?? []) as unknown as {
+    id: string
+    pharmacy_id: string
+    starts_at: string
+    ends_at: string
+    pharmacy: PharmacyRow[]
+  }[]
+
+  return rows
+    .filter((row) => row.pharmacy?.length > 0)
+    .map((row) => ({
+      id: row.id,
+      pharmacy_id: row.pharmacy_id,
+      starts_at: row.starts_at,
+      ends_at: row.ends_at,
+      pharmacy: {
+        ...rowToPharmacy(row.pharmacy[0]),
+        is_on_guard: true,
+      },
+    }))
 }
 
-// ─── Détail d'une pharmacie par ID ────────────────────────────────────────
+// ─── Pharmacie par ID ─────────────────────────────────────────────────────
 export const getPharmacyById = async (id: string): Promise<Pharmacy | null> => {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from('pharmacies')
@@ -105,10 +134,7 @@ export const getPharmacyById = async (id: string): Promise<Pharmacy | null> => {
     return null
   }
 
-  return {
-    ...data,
-    location: parseLocation(data.location),
-  }
+  return rowToPharmacy(data as unknown as PharmacyRow)
 }
 
 // ─── Toutes les pharmacies (admin) ────────────────────────────────────────
@@ -125,10 +151,7 @@ export const getAllPharmacies = async (): Promise<Pharmacy[]> => {
     return []
   }
 
-  return (data ?? []).map((row) => ({
-    ...row,
-    location: parseLocation(row.location),
-  }))
+  return (data as unknown as PharmacyRow[]).map(rowToPharmacy)
 }
 
 // ─── Créer une pharmacie (admin) ──────────────────────────────────────────
@@ -158,7 +181,7 @@ export const createPharmacy = async (payload: {
   }
 
   return {
-    ...data,
+    ...rowToPharmacy(data as unknown as PharmacyRow),
     location: { lat: payload.lat, lng: payload.lng },
   }
 }

@@ -1,14 +1,49 @@
 // types/index.ts
 
+// ─── Types base de données (raw Supabase) ─────────────────────────────────
+export type PharmacyRow = {
+  id: string
+  name: string
+  address: string
+  phone: string | null
+  location: unknown
+  created_at: string
+}
+
+export type GuardScheduleRow = {
+  id: string
+  pharmacy_id: string
+  starts_at: string
+  ends_at: string
+}
+
+export type MedicationRow = {
+  id: string
+  name: string
+  dci: string | null
+  category: string | null
+  otc: boolean
+}
+
+export type InventoryRow = {
+  pharmacy_id: string
+  medication_id: string
+  quantity: number
+  updated_at: string
+}
+
+// ─── Types applicatifs ────────────────────────────────────────────────────
+export type Location = {
+  lat: number
+  lng: number
+}
+
 export interface Pharmacy {
   id: string
   name: string
   address: string
   phone: string | null
-  location: {
-    lat: number
-    lng: number
-  }
+  location: Location
   created_at: string
   distance?: number
   is_on_guard?: boolean
@@ -39,7 +74,7 @@ export interface PharmacyInventory {
   pharmacy?: Pharmacy
 }
 
-// ─── Types enrichis (retours API) ────────────────────────────────────────
+// ─── Types enrichis ───────────────────────────────────────────────────────
 export type PharmacyWithGuard = Pharmacy & {
   is_on_guard: boolean
 }
@@ -49,7 +84,7 @@ export type MedicationResult = Medication & {
     total_pharmacies: number
     in_stock: number
   }
-  pharmacies: (PharmacyInventory & {
+  pharmacies: (InventoryRow & {
     pharmacy: Pharmacy & { distance: number | null }
   })[]
 }
@@ -58,7 +93,7 @@ export type GuardScheduleWithPharmacy = GuardSchedule & {
   pharmacy: Pharmacy
 }
 
-// ─── Réponses API ────────────────────────────────────────────────────────
+// ─── Réponses API ─────────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   data: T | null
   error: string | null
@@ -74,17 +109,10 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 }
 
 export type NearbyPharmaciesResponse = ApiResponse<PharmacyWithGuard[]>
-
-export type GuardPharmaciesResponse = PaginatedResponse<{
-  schedule_id: string
-  starts_at: string
-  ends_at: string
-  pharmacy: Pharmacy & { distance: number | null }
-}>
-
+export type GuardPharmaciesResponse = PaginatedResponse<GuardScheduleWithPharmacy>
 export type MedicationSearchResponse = PaginatedResponse<MedicationResult>
 
-// ─── Paramètres ──────────────────────────────────────────────────────────
+// ─── Paramètres ───────────────────────────────────────────────────────────
 export interface GeoParams {
   lat: number
   lng: number
@@ -96,11 +124,11 @@ export interface SearchParams extends Partial<GeoParams> {
   otc?: boolean
 }
 
-// ─── UI State ────────────────────────────────────────────────────────────
+// ─── UI ───────────────────────────────────────────────────────────────────
 export type MapView = 'all' | 'guard'
 
 export interface AppState {
-  userLocation: { lat: number; lng: number } | null
+  userLocation: Location | null
   selectedPharmacyId: string | null
   mapView: MapView
   searchQuery: string
