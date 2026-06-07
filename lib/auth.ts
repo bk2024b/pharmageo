@@ -1,7 +1,8 @@
 // lib/auth.ts
 
 import { supabase } from '@/lib/supabase'
-import { createSupabaseServerClient } from '@/lib/supabase'
+import { createSupabaseAdminClient } from '@/lib/supabase'
+
 
 // ─── Types ────────────────────────────────────────────────────────────────
 export type SignUpPayload = {
