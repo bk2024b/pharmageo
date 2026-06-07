@@ -122,7 +122,7 @@ export default function HomePage() {
   )
 
   // ── Sélection pharmacie ─────────────────────────────────────────────────
-  const handleSelectPharmacy = useCallback((pharmacy: PharmacyWithGuard) => {
+  const handleSelectPharmacy = useCallback((pharmacy: { id: string }) => {
     setSelectedId((prev) => (prev === pharmacy.id ? null : pharmacy.id))
   }, [])
 
