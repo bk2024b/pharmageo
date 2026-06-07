@@ -160,13 +160,8 @@ const MedicationResultCard = ({ medication }: { medication: MedicationResult }) 
                   {item.pharmacy.distance !== null && (
                     <DistanceBadge meters={item.pharmacy.distance} />
                   )}
-                  <span className={`text-xs font-semibold ${
-                    item.quantity <= 5 ? 'text-orange-500' : 'text-green-600'
-                  }`}>
-                    {item.quantity <= 5
-                      ? `${item.quantity} restant${item.quantity > 1 ? 's' : ''}`
-                      : 'En stock'
-                    }
+                  <span className="text-xs font-semibold text-green-600">
+                    En stock
                   </span>
                 </div>
               </div>

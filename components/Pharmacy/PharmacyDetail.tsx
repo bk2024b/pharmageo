@@ -150,8 +150,8 @@ const MedicationGroup = ({ title, items, badgeColor }: MedicationGroupProps) => 
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className={`text-xs font-semibold ${item.quantity <= 5 ? 'text-orange-600' : 'text-green-600'}`}>
-              {item.quantity <= 5 ? `${item.quantity} restant${item.quantity > 1 ? 's' : ''}` : 'En stock'}
+            <span className="text-xs font-semibold text-green-600">
+              En stock
             </span>
           </div>
         </div>
