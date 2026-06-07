@@ -54,7 +54,7 @@ export default async function PharmacyPage({ params }: Props) {
         </div>
 
         {pharmacy.phone && (
-          
+          <a
             href={`tel:${pharmacy.phone}`}
             className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
             aria-label={`Appeler ${pharmacy.name}`}
