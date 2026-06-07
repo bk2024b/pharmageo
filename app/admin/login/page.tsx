@@ -27,13 +27,14 @@ export default function AdminLoginPage() {
     setError(null)
 
     const result = await signInPharmacist(form)
-    setLoading(false)
 
     if (!result.success) {
+      setLoading(false)
       setError('Email ou mot de passe incorrect')
       return
     }
 
+    router.refresh()
     router.push('/admin/dashboard')
   }
 

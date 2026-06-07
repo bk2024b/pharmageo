@@ -14,9 +14,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ email: '', password: '' })
 
-  const set = (key: keyof typeof form) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => setForm((prev) => ({ ...prev, [key]: e.target.value }))
+  const set = (key: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
   const handleSubmit = async () => {
     if (!form.email || !form.password) {
@@ -28,13 +28,14 @@ export default function LoginPage() {
     setError(null)
 
     const result = await signInPharmacist(form)
-    setLoading(false)
 
     if (!result.success) {
+      setLoading(false)
       setError('Email ou mot de passe incorrect')
       return
     }
 
+    router.refresh()
     router.push('/pharmacie/dashboard')
   }
 
