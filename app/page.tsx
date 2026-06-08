@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import Image from 'next/image'
 import { PharmacyCard } from '@/components/Pharmacy/PharmacyCard'
 import { SearchBar } from '@/components/Search/SearchBar'
 import { SearchResults } from '@/components/Search/SearchResults'
@@ -18,7 +19,7 @@ const PharmacyMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full min-h-[400px] rounded-xl bg-gray-100 animate-pulse flex items-center justify-center">
+      <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
         <LoadingSpinner size="md" label="Chargement de la carte..." />
       </div>
     ),
@@ -36,6 +37,7 @@ export default function HomePage() {
   const [pharmaciesLoading, setPharmaciesLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<ActiveTab>('map')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mapExpanded, setMapExpanded] = useState(false)
 
   // ── Recherche médicaments ─────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('')
@@ -47,7 +49,6 @@ export default function HomePage() {
   const [pharmacySearchResults, setPharmacySearchResults] = useState<PharmacyWithGuard[]>([])
   const [pharmacySearchLoading, setPharmacySearchLoading] = useState(false)
 
-  // ── Géolocalisation ───────────────────────────────────────────────────
   useEffect(() => {
     const locate = async () => {
       try {
@@ -78,8 +79,7 @@ export default function HomePage() {
       const json = await res.json()
 
       if (view === 'guard') {
-        const list = (json.data ?? []).map((item: any) => item.pharmacy)
-        setPharmacies(list)
+        setPharmacies((json.data ?? []).map((item: any) => item.pharmacy))
       } else {
         setPharmacies(json.data ?? [])
       }
@@ -90,53 +90,37 @@ export default function HomePage() {
     }
   }
 
-  // ── Recherche médicaments ─────────────────────────────────────────────
   const handleMedicationSearch = useCallback(async (query: string) => {
     setSearchQuery(query)
-
-    if (!query || query.trim().length < 2) {
-      setSearchResults([])
-      return
-    }
-
+    if (!query || query.trim().length < 2) { setSearchResults([]); return }
     setSearchLoading(true)
     try {
       const coords = userLocation ?? COTONOU_CENTER
-      const url =
-        `/api/medications/search?q=${encodeURIComponent(query)}` +
-        `&lat=${coords.lat}&lng=${coords.lng}`
-
-      const res = await fetch(url)
+      const res = await fetch(
+        `/api/medications/search?q=${encodeURIComponent(query)}&lat=${coords.lat}&lng=${coords.lng}`
+      )
       const json = await res.json()
       setSearchResults(json.data ?? [])
     } catch (err) {
-      console.error('[handleMedicationSearch]', err)
+      console.error(err)
     } finally {
       setSearchLoading(false)
     }
   }, [userLocation])
 
-  // ── Recherche pharmacies ──────────────────────────────────────────────
   const handlePharmacySearch = useCallback(async (query: string) => {
     setPharmacySearch(query)
-
-    if (!query || query.trim().length < 2) {
-      setPharmacySearchResults([])
-      return
-    }
-
+    if (!query || query.trim().length < 2) { setPharmacySearchResults([]); return }
     setPharmacySearchLoading(true)
     try {
       const coords = userLocation ?? COTONOU_CENTER
-      const url =
-        `/api/pharmacies/search?q=${encodeURIComponent(query)}` +
-        `&lat=${coords.lat}&lng=${coords.lng}`
-
-      const res = await fetch(url)
+      const res = await fetch(
+        `/api/pharmacies/search?q=${encodeURIComponent(query)}&lat=${coords.lat}&lng=${coords.lng}`
+      )
       const json = await res.json()
       setPharmacySearchResults(json.data ?? [])
     } catch (err) {
-      console.error('[handlePharmacySearch]', err)
+      console.error(err)
     } finally {
       setPharmacySearchLoading(false)
     }
@@ -144,22 +128,27 @@ export default function HomePage() {
 
   const handleSelectPharmacy = useCallback((pharmacy: Pharmacy) => {
     setSelectedId((prev) => (prev === pharmacy.id ? null : pharmacy.id))
+    // Réduire la carte quand on sélectionne une pharmacie
+    setMapExpanded(false)
   }, [])
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-dvh bg-gray-50 overflow-hidden">
 
       {/* ── Header ───────────────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+      <header className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 shrink-0 shadow-sm">
         <div className="flex items-center gap-2">
-          <span className="text-xl">💊</span>
-          <h1 className="text-base font-bold text-gray-900">PharmaGéo</h1>
+          {/* Logo — remplace par ton vrai logo */}
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-600">
+            <span className="text-white text-base">💊</span>
+          </div>
+          <span className="text-base font-bold text-gray-900">PharmaGéo</span>
         </div>
 
         <div className="flex items-center gap-2">
           {locationError && (
-            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-              Position approximative
+            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              📍 Approx.
             </span>
           )}
 
@@ -177,29 +166,17 @@ export default function HomePage() {
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                 <div className="absolute right-0 top-10 z-20 w-52 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-                  <Link
-                    href="/pharmacie/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <span>🏥</span>
-                    Espace pharmacie
+                  <Link href="/pharmacie/login" onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                    <span>🏥</span> Espace pharmacie
                   </Link>
-                  <Link
-                    href="/pharmacie/inscription"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
-                  >
-                    <span>➕</span>
-                    Inscrire ma pharmacie
+                  <Link href="/pharmacie/inscription" onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100">
+                    <span>➕</span> Inscrire ma pharmacie
                   </Link>
-                  <Link
-                    href="/admin/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors border-t border-gray-100"
-                  >
-                    <span>⚙️</span>
-                    Administration
+                  <Link href="/admin/login" onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 border-t border-gray-100">
+                    <span>⚙️</span> Administration
                   </Link>
                 </div>
               </>
@@ -209,7 +186,7 @@ export default function HomePage() {
       </header>
 
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1 px-4 pt-3 shrink-0">
+      <div className="flex items-center gap-1 px-4 py-2 bg-white border-b border-gray-100 shrink-0">
         <TabButton active={activeTab === 'map'} onClick={() => setActiveTab('map')} label="Carte" icon="🗺️" />
         <TabButton active={activeTab === 'pharmacies'} onClick={() => setActiveTab('pharmacies')} label="Pharmacies" icon="🏥" />
         <TabButton active={activeTab === 'medications'} onClick={() => setActiveTab('medications')} label="Médicaments" icon="💊" />
@@ -217,8 +194,10 @@ export default function HomePage() {
 
       {/* ══ VUE CARTE ══════════════════════════════════════════════════ */}
       {activeTab === 'map' && (
-        <div className="flex flex-col flex-1 overflow-hidden gap-3 p-4">
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-col flex-1 overflow-hidden">
+
+          {/* Filtres */}
+          <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-100 shrink-0">
             <FilterButton active={mapView === 'all'} onClick={() => setMapView('all')} label="Toutes" />
             <FilterButton
               active={mapView === 'guard'}
@@ -226,50 +205,85 @@ export default function HomePage() {
               label="De garde"
               badge={<GuardBadge compact />}
             />
-            {pharmaciesLoading && (
-              <div className="ml-auto">
-                <LoadingSpinner size="sm" label="" />
-              </div>
-            )}
+            {pharmaciesLoading && <div className="ml-auto"><LoadingSpinner size="sm" label="" /></div>}
           </div>
 
-          <div className="flex-1 min-h-0">
+          {/* ── Carte avec hauteur fixe + bouton expand ───────────────── */}
+          <div
+            className={`relative shrink-0 transition-all duration-300 ${
+              mapExpanded ? 'h-[65dvh]' : 'h-[42dvh]'
+            }`}
+          >
             <PharmacyMap
               pharmacies={pharmacies}
               userLocation={userLocation}
               selectedId={selectedId}
               onSelectPharmacy={handleSelectPharmacy}
-              className="h-full"
+              className="h-full w-full"
             />
+
+            {/* Bouton expand/collapse */}
+            <button
+              onClick={() => setMapExpanded((prev) => !prev)}
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white shadow-md border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-all z-10"
+            >
+              <svg
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${mapExpanded ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              {mapExpanded ? 'Réduire' : 'Agrandir'}
+            </button>
           </div>
 
-          <div className="shrink-0 max-h-48 overflow-y-auto flex flex-col gap-2">
-            {pharmaciesLoading ? (
-              <LoadingSpinner size="sm" label="Recherche en cours..." />
-            ) : pharmacies.length === 0 ? (
-              <p className="text-sm text-center text-gray-400 py-4">
-                {mapView === 'guard'
-                  ? 'Aucune pharmacie de garde en ce moment'
-                  : 'Aucune pharmacie trouvée dans ce rayon'}
-              </p>
-            ) : (
-              pharmacies.map((p) => (
-                <PharmacyCard
-                  key={p.id}
-                  pharmacy={p}
-                  selected={selectedId === p.id}
-                  onClick={() => handleSelectPharmacy(p)}
-                />
-              ))
-            )}
+          {/* ── Liste pharmacies scrollable ───────────────────────────── */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Handle visuel */}
+            <div className="flex justify-center py-2 bg-white border-b border-gray-100 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            </div>
+
+            <div className="flex flex-col gap-2 px-4 py-3">
+              {pharmaciesLoading ? (
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner size="sm" label="Recherche en cours..." />
+                </div>
+              ) : pharmacies.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
+                  <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <p className="text-sm">
+                    {mapView === 'guard'
+                      ? 'Aucune pharmacie de garde en ce moment'
+                      : 'Aucune pharmacie trouvée dans ce rayon'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400">
+                    {pharmacies.length} pharmacie{pharmacies.length > 1 ? 's' : ''} trouvée{pharmacies.length > 1 ? 's' : ''}
+                  </p>
+                  {pharmacies.map((p) => (
+                    <PharmacyCard
+                      key={p.id}
+                      pharmacy={p}
+                      selected={selectedId === p.id}
+                      onClick={() => handleSelectPharmacy(p)}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* ══ VUE RECHERCHE PHARMACIES ═══════════════════════════════════ */}
       {activeTab === 'pharmacies' && (
-        <div className="flex flex-col flex-1 overflow-hidden gap-3 p-4">
-          <div className="shrink-0">
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="px-4 py-3 bg-white border-b border-gray-100 shrink-0">
             <SearchBar
               onSearch={handlePharmacySearch}
               loading={pharmacySearchLoading}
@@ -277,26 +291,20 @@ export default function HomePage() {
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-4 py-3">
             {!pharmacySearch || pharmacySearch.trim().length < 2 ? (
-              /* Pas encore de recherche → afficher toutes les pharmacies proches */
               <div className="flex flex-col gap-2">
-                <p className="text-xs text-gray-400 px-1">
-                  Pharmacies à proximité
-                </p>
+                <p className="text-xs text-gray-400">Pharmacies à proximité</p>
                 {pharmaciesLoading ? (
-                  <LoadingSpinner size="md" label="Chargement..." />
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner size="md" label="Chargement..." />
+                  </div>
                 ) : pharmacies.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-                    <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
                     <p className="text-sm">Aucune pharmacie trouvée dans ce rayon</p>
                   </div>
                 ) : (
-                  pharmacies.map((p) => (
-                    <PharmacyCard key={p.id} pharmacy={p} />
-                  ))
+                  pharmacies.map((p) => <PharmacyCard key={p.id} pharmacy={p} />)
                 )}
               </div>
             ) : pharmacySearchLoading ? (
@@ -310,16 +318,16 @@ export default function HomePage() {
                 <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-sm font-medium text-gray-600">Aucun résultat pour « {pharmacySearch} »</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Aucun résultat pour « {pharmacySearch} »
+                </p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <p className="text-xs text-gray-400 px-1">
+                <p className="text-xs text-gray-400">
                   {pharmacySearchResults.length} résultat{pharmacySearchResults.length > 1 ? 's' : ''}
                 </p>
-                {pharmacySearchResults.map((p) => (
-                  <PharmacyCard key={p.id} pharmacy={p} />
-                ))}
+                {pharmacySearchResults.map((p) => <PharmacyCard key={p.id} pharmacy={p} />)}
               </div>
             )}
           </div>
@@ -328,15 +336,15 @@ export default function HomePage() {
 
       {/* ══ VUE RECHERCHE MÉDICAMENTS ══════════════════════════════════ */}
       {activeTab === 'medications' && (
-        <div className="flex flex-col flex-1 overflow-hidden gap-3 p-4">
-          <div className="shrink-0">
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="px-4 py-3 bg-white border-b border-gray-100 shrink-0">
             <SearchBar
               onSearch={handleMedicationSearch}
               loading={searchLoading}
               placeholder="Médicament, DCI, catégorie..."
             />
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-4 py-3">
             <SearchResults
               results={searchResults}
               query={searchQuery}
@@ -345,22 +353,42 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ── Bottom nav mobile ─────────────────────────────────────────── */}
+      <nav className="flex items-center bg-white border-t border-gray-200 shrink-0 pb-[env(safe-area-inset-bottom)]">
+        <BottomNavBtn
+          active={activeTab === 'map'}
+          onClick={() => setActiveTab('map')}
+          icon="🗺️"
+          label="Carte"
+        />
+        <BottomNavBtn
+          active={activeTab === 'pharmacies'}
+          onClick={() => setActiveTab('pharmacies')}
+          icon="🏥"
+          label="Pharmacies"
+        />
+        <BottomNavBtn
+          active={activeTab === 'medications'}
+          onClick={() => setActiveTab('medications')}
+          icon="💊"
+          label="Médicaments"
+        />
+      </nav>
     </div>
   )
 }
 
+// ── Composants locaux ─────────────────────────────────────────────────────
 const TabButton = ({
   active, onClick, label, icon,
 }: {
-  active: boolean
-  onClick: () => void
-  label: string
-  icon: string
+  active: boolean; onClick: () => void; label: string; icon: string
 }) => (
   <button
     onClick={onClick}
     className={`
-      flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium
+      flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
       transition-all duration-200
       ${active
         ? 'bg-green-600 text-white shadow-sm'
@@ -376,10 +404,7 @@ const TabButton = ({
 const FilterButton = ({
   active, onClick, label, badge,
 }: {
-  active: boolean
-  onClick: () => void
-  label: string
-  badge?: React.ReactNode
+  active: boolean; onClick: () => void; label: string; badge?: React.ReactNode
 }) => (
   <button
     onClick={onClick}
@@ -394,5 +419,23 @@ const FilterButton = ({
   >
     {label}
     {badge}
+  </button>
+)
+
+const BottomNavBtn = ({
+  active, onClick, icon, label,
+}: {
+  active: boolean; onClick: () => void; icon: string; label: string
+}) => (
+  <button
+    onClick={onClick}
+    className={`
+      flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium
+      transition-colors duration-200
+      ${active ? 'text-green-600' : 'text-gray-400'}
+    `}
+  >
+    <span className="text-lg leading-none">{icon}</span>
+    <span>{label}</span>
   </button>
 )
