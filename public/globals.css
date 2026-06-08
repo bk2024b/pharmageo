@@ -1,0 +1,40 @@
+/* app/globals.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── PWA safe areas (iPhone notch / Dynamic Island) ─────────────────────── */
+:root {
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
+}
+
+/* Empêcher le bounce scroll iOS sur le body */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hauteur plein écran PWA iOS */
+body {
+  min-height: 100dvh;
+}
+
+/* Désactiver la sélection de texte sur les boutons */
+button {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Smooth scroll natif */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Inputs iOS : désactiver le zoom auto sur focus */
+input, select, textarea {
+  font-size: 16px !important;
+}
