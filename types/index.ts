@@ -30,6 +30,7 @@ export type InventoryRow = {
   medication_id: string
   quantity: number
   updated_at: string
+  in_stock: boolean
 }
 
 // ─── Types applicatifs ────────────────────────────────────────────────────
@@ -70,6 +71,7 @@ export interface PharmacyInventory {
   medication_id: string
   quantity: number
   updated_at: string
+  in_stock: boolean
   medication?: Medication
   pharmacy?: Pharmacy
 }

@@ -8,13 +8,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
 
-    // ─── Paramètres ──────────────────────────────────────────────────────
     const query = searchParams.get('q')
     const latParam = searchParams.get('lat')
     const lngParam = searchParams.get('lng')
     const otcOnly = searchParams.get('otc') === 'true'
 
-    // ─── Validation query ────────────────────────────────────────────────
     if (!query || query.trim().length < 2) {
       return NextResponse.json(
         { data: null, error: 'Paramètre q requis (minimum 2 caractères)' },
@@ -29,29 +27,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ─── Validation coords optionnelles ──────────────────────────────────
     let userLat: number | null = null
     let userLng: number | null = null
 
     if (latParam && lngParam) {
       const lat = parseFloat(latParam)
       const lng = parseFloat(lngParam)
-
-      if (!isValidCoords(lat, lng)) {
-        return NextResponse.json(
-          { data: null, error: 'Coordonnées GPS invalides' },
-          { status: 400 }
-        )
+      if (isValidCoords(lat, lng)) {
+        userLat = lat
+        userLng = lng
       }
-
-      userLat = lat
-      userLng = lng
     }
 
-    // ─── Recherche médicaments ───────────────────────────────────────────
     let results = await searchMedications(query.trim())
 
-    // ─── Filtre vente libre ──────────────────────────────────────────────
     if (otcOnly) {
       results = results.filter((med) => med.otc === true)
     }
@@ -63,7 +52,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ─── Enrichir chaque médicament avec ses pharmacies + distance ────────
     const enriched = await Promise.all(
       results.map(async (med) => {
         const pharmacyRows = await getPharmaciesForMedication(med.id)
@@ -82,6 +70,7 @@ export async function GET(request: NextRequest) {
             return {
               pharmacy_id: row.pharmacy_id,
               quantity: row.quantity,
+              in_stock: row.in_stock,
               updated_at: row.updated_at,
               pharmacy: {
                 id: row.pharmacy?.id,
@@ -93,12 +82,11 @@ export async function GET(request: NextRequest) {
               },
             }
           })
-          // trier par distance si dispo, sinon par stock décroissant
           .sort((a, b) => {
             if (a.pharmacy.distance !== null && b.pharmacy.distance !== null) {
               return a.pharmacy.distance - b.pharmacy.distance
             }
-            return b.quantity - a.quantity
+            return 0
           })
 
         return {
@@ -109,14 +97,13 @@ export async function GET(request: NextRequest) {
           otc: med.otc,
           availability: {
             total_pharmacies: pharmacies.length,
-            in_stock: pharmacies.filter((p) => p.quantity > 0).length,
+            in_stock: pharmacies.length,
           },
           pharmacies,
         }
       })
     )
 
-    // ─── Trier les médicaments : d'abord ceux qui ont du stock ───────────
     const sorted = enriched.sort(
       (a, b) => b.availability.in_stock - a.availability.in_stock
     )

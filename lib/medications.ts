@@ -4,7 +4,6 @@ import { createSupabaseAdminClient } from '@/lib/supabase'
 import { createSupabaseServerClient } from '@/lib/supabase.server'
 import type { Medication, PharmacyInventory, MedicationRow, InventoryRow } from '@/types'
 
-// ─── Helper ───────────────────────────────────────────────────────────────
 const rowToMedication = (row: MedicationRow): Medication => ({
   id: row.id,
   name: row.name,
@@ -33,7 +32,8 @@ export const searchMedications = async (
         pharmacy_id,
         medication_id,
         quantity,
-        updated_at
+        updated_at,
+        in_stock
       )
     `)
     .or(`name.ilike.%${query.trim()}%,dci.ilike.%${query.trim()}%`)
@@ -49,7 +49,7 @@ export const searchMedications = async (
 
   return rows.map((row) => ({
     ...rowToMedication(row),
-    inventory: row.inventory ?? [],
+    inventory: (row.inventory ?? []).filter((i) => i.in_stock),
   }))
 }
 
@@ -66,6 +66,7 @@ export const getMedicationsByPharmacy = async (
       medication_id,
       quantity,
       updated_at,
+      in_stock,
       medication:medications (
         id,
         name,
@@ -75,7 +76,7 @@ export const getMedicationsByPharmacy = async (
       )
     `)
     .eq('pharmacy_id', pharmacyId)
-    .gt('quantity', 0)
+    .eq('in_stock', true)
     .order('updated_at', { ascending: false })
 
   if (error) {
@@ -90,6 +91,7 @@ export const getMedicationsByPharmacy = async (
     medication_id: row.medication_id,
     quantity: row.quantity,
     updated_at: row.updated_at,
+    in_stock: row.in_stock,
     medication: rowToMedication(row.medication),
   }))
 }
@@ -107,6 +109,7 @@ export const getPharmaciesForMedication = async (
       medication_id,
       quantity,
       updated_at,
+      in_stock,
       pharmacy:pharmacies (
         id,
         name,
@@ -116,8 +119,8 @@ export const getPharmaciesForMedication = async (
       )
     `)
     .eq('medication_id', medicationId)
-    .gt('quantity', 0)
-    .order('quantity', { ascending: false })
+    .eq('in_stock', true)
+    .order('updated_at', { ascending: false })
 
   if (error) {
     console.error('[getPharmaciesForMedication]', error.message)
@@ -150,6 +153,7 @@ export const upsertInventory = async (payload: {
   pharmacy_id: string
   medication_id: string
   quantity: number
+  in_stock: boolean
 }): Promise<boolean> => {
   const supabase = createSupabaseAdminClient()
 
@@ -160,6 +164,7 @@ export const upsertInventory = async (payload: {
         pharmacy_id: payload.pharmacy_id,
         medication_id: payload.medication_id,
         quantity: payload.quantity,
+        in_stock: payload.in_stock,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'pharmacy_id,medication_id' }
