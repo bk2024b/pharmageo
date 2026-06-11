@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { Medication } from '@/types'
 
 type StockItem = Medication & {
@@ -42,7 +43,6 @@ export const StockManager = ({ pharmacyId }: StockManagerProps) => {
   const handleToggle = async (medicationId: string, currentValue: boolean) => {
     setToggling(medicationId)
 
-    // Optimistic update
     setItems((prev) =>
       prev.map((item) =>
         item.id === medicationId
@@ -64,7 +64,6 @@ export const StockManager = ({ pharmacyId }: StockManagerProps) => {
 
       if (!res.ok) throw new Error('Erreur serveur')
     } catch (err) {
-      // Rollback
       setItems((prev) =>
         prev.map((item) =>
           item.id === medicationId
@@ -78,7 +77,6 @@ export const StockManager = ({ pharmacyId }: StockManagerProps) => {
     }
   }
 
-  // ── Filtres ───────────────────────────────────────────────────────────
   const filtered = items.filter((item) => {
     const matchSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -101,21 +99,9 @@ export const StockManager = ({ pharmacyId }: StockManagerProps) => {
 
       {/* ── Résumé ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard
-          label="Total"
-          value={items.length}
-          color="gray"
-        />
-        <StatCard
-          label="En stock"
-          value={stockCount}
-          color="green"
-        />
-        <StatCard
-          label="Rupture"
-          value={items.length - stockCount}
-          color="red"
-        />
+        <StatCard label="Total" value={items.length} color="gray" />
+        <StatCard label="En stock" value={stockCount} color="green" />
+        <StatCard label="Rupture" value={items.length - stockCount} color="red" />
       </div>
 
       {/* ── Barre de recherche ───────────────────────────────────────── */}
@@ -155,12 +141,11 @@ export const StockManager = ({ pharmacyId }: StockManagerProps) => {
 
       {/* ── Liste médicaments ────────────────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-          <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-sm">Aucun médicament trouvé</p>
-        </div>
+        <EmptyState
+          type="stock"
+          title="Aucun médicament trouvé"
+          subtitle="Modifiez votre recherche ou réinitialisez les filtres."
+        />
       ) : (
         <div className="flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white overflow-hidden">
           {filtered.map((item) => (
@@ -186,7 +171,6 @@ export const StockManager = ({ pharmacyId }: StockManagerProps) => {
                 </div>
               </div>
 
-              {/* Toggle */}
               <button
                 onClick={() => handleToggle(item.id, item.in_stock)}
                 disabled={toggling === item.id}

@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 type GuardSlot = {
   id: string
@@ -72,7 +73,7 @@ export const GuardManager = ({ pharmacyId }: GuardManagerProps) => {
       setShowForm(false)
       await fetchSlots()
     } catch (err) {
-      setFormError('Erreur lors de l\'ajout')
+      setFormError("Erreur lors de l'ajout")
     } finally {
       setAdding(false)
     }
@@ -90,15 +91,14 @@ export const GuardManager = ({ pharmacyId }: GuardManagerProps) => {
     }
   }
 
-  const formatDate = (iso: string) => {
-    return new Date(iso).toLocaleString('fr-FR', {
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleString('fr-FR', {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
       minute: '2-digit',
     })
-  }
 
   if (loading) return <LoadingSpinner size="md" label="Chargement des gardes..." />
 
@@ -175,13 +175,11 @@ export const GuardManager = ({ pharmacyId }: GuardManagerProps) => {
 
       {/* ── Liste créneaux ────────────────────────────────────────────── */}
       {slots.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-          <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <p className="text-sm">Aucun créneau de garde déclaré</p>
-          <p className="text-xs text-gray-300">Appuyez sur Ajouter pour créer votre premier créneau</p>
-        </div>
+        <EmptyState
+          type="schedule"
+          title="Aucun créneau déclaré"
+          subtitle="Appuyez sur Ajouter pour déclarer votre première garde."
+        />
       ) : (
         <div className="flex flex-col gap-2">
           {slots.map((slot) => (

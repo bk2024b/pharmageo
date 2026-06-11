@@ -10,6 +10,7 @@ import { SearchBar } from '@/components/Search/SearchBar'
 import { SearchResults } from '@/components/Search/SearchResults'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { GuardBadge } from '@/components/ui/GuardBadge'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { Pharmacy, PharmacyWithGuard, MedicationResult, MapView } from '@/types'
 import { getUserLocation, COTONOU_CENTER } from '@/lib/geo'
 
@@ -232,20 +233,21 @@ export default function HomePage() {
 
             <div className="flex flex-col gap-2 px-4 py-3">
               {pharmaciesLoading ? (
-                <div className="flex justify-center py-8">
-                  <LoadingSpinner size="sm" label="Recherche en cours..." />
+                <div className="flex flex-col gap-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />
+                  ))}
                 </div>
               ) : pharmacies.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-                  <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <p className="text-sm">
-                    {mapView === 'guard'
-                      ? 'Aucune pharmacie de garde en ce moment'
-                      : 'Aucune pharmacie trouvée dans ce rayon'}
-                  </p>
-                </div>
+                <EmptyState
+                  type={mapView === 'guard' ? 'guard' : 'pharmacy'}
+                  title={mapView === 'guard' ? 'Aucune pharmacie de garde' : 'Aucune pharmacie trouvée'}
+                  subtitle={
+                    mapView === 'guard'
+                      ? "Aucune pharmacie n'est en service de garde en ce moment."
+                      : 'Essayez d\'élargir le rayon ou vérifiez votre position.'
+                  }
+                />
               ) : (
                 <>
                   <p className="text-xs text-gray-400">
@@ -282,13 +284,17 @@ export default function HomePage() {
               <div className="flex flex-col gap-2">
                 <p className="text-xs text-gray-400">Pharmacies à proximité</p>
                 {pharmaciesLoading ? (
-                  <div className="flex justify-center py-8">
-                    <LoadingSpinner size="md" label="Chargement..." />
+                  <div className="flex flex-col gap-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />
+                    ))}
                   </div>
                 ) : pharmacies.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-                    <p className="text-sm">Aucune pharmacie trouvée dans ce rayon</p>
-                  </div>
+                  <EmptyState
+                    type="pharmacy"
+                    title="Aucune pharmacie trouvée"
+                    subtitle="Aucune pharmacie active n'a été trouvée dans votre rayon."
+                  />
                 ) : (
                   pharmacies.map((p) => <PharmacyCard key={p.id} pharmacy={p} />)
                 )}
@@ -296,18 +302,15 @@ export default function HomePage() {
             ) : pharmacySearchLoading ? (
               <div className="flex flex-col gap-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 rounded-xl bg-gray-100 animate-pulse" />
+                  <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />
                 ))}
               </div>
             ) : pharmacySearchResults.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-                <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm font-medium text-gray-600">
-                  Aucun résultat pour « {pharmacySearch} »
-                </p>
-              </div>
+              <EmptyState
+                type="search"
+                title={`Aucun résultat pour « ${pharmacySearch} »`}
+                subtitle="Vérifiez l'orthographe ou essayez un autre nom de quartier."
+              />
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-xs text-gray-400">
@@ -403,4 +406,4 @@ const BottomNavBtn = ({
     <span className="text-lg leading-none">{icon}</span>
     <span>{label}</span>
   </button>
-) 
+)
