@@ -4,7 +4,10 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pharmageo.vercel.app'),
@@ -53,8 +56,6 @@ export const viewport: Viewport = {
   themeColor: '#16A34A',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 }
 
@@ -89,7 +90,7 @@ export default function RootLayout({
         <link rel="icon" href="/icons/icon-32x32.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} font-sans`}>
         {children}
       </body>
     </html>

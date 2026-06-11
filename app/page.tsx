@@ -5,7 +5,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import Image from 'next/image'
 import { PharmacyCard } from '@/components/Pharmacy/PharmacyCard'
 import { SearchBar } from '@/components/Search/SearchBar'
 import { SearchResults } from '@/components/Search/SearchResults'
@@ -39,12 +38,10 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mapExpanded, setMapExpanded] = useState(false)
 
-  // ── Recherche médicaments ─────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<MedicationResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
 
-  // ── Recherche pharmacies ──────────────────────────────────────────────
   const [pharmacySearch, setPharmacySearch] = useState('')
   const [pharmacySearchResults, setPharmacySearchResults] = useState<PharmacyWithGuard[]>([])
   const [pharmacySearchLoading, setPharmacySearchLoading] = useState(false)
@@ -128,7 +125,6 @@ export default function HomePage() {
 
   const handleSelectPharmacy = useCallback((pharmacy: Pharmacy) => {
     setSelectedId((prev) => (prev === pharmacy.id ? null : pharmacy.id))
-    // Réduire la carte quand on sélectionne une pharmacie
     setMapExpanded(false)
   }, [])
 
@@ -138,7 +134,6 @@ export default function HomePage() {
       {/* ── Header ───────────────────────────────────────────────────── */}
       <header className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 shrink-0 shadow-sm">
         <div className="flex items-center gap-2">
-          {/* Logo — remplace par ton vrai logo */}
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-600">
             <span className="text-white text-base">💊</span>
           </div>
@@ -156,10 +151,18 @@ export default function HomePage() {
             <button
               onClick={() => setMenuOpen((prev) => !prev)}
               className="flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              aria-label="Menu"
+              aria-expanded={menuOpen}
             >
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              {menuOpen ? (
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
             </button>
 
             {menuOpen && (
@@ -185,13 +188,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1 px-4 py-2 bg-white border-b border-gray-100 shrink-0">
-        <TabButton active={activeTab === 'map'} onClick={() => setActiveTab('map')} label="Carte" icon="🗺️" />
-        <TabButton active={activeTab === 'pharmacies'} onClick={() => setActiveTab('pharmacies')} label="Pharmacies" icon="🏥" />
-        <TabButton active={activeTab === 'medications'} onClick={() => setActiveTab('medications')} label="Médicaments" icon="💊" />
-      </div>
-
       {/* ══ VUE CARTE ══════════════════════════════════════════════════ */}
       {activeTab === 'map' && (
         <div className="flex flex-col flex-1 overflow-hidden">
@@ -208,7 +204,7 @@ export default function HomePage() {
             {pharmaciesLoading && <div className="ml-auto"><LoadingSpinner size="sm" label="" /></div>}
           </div>
 
-          {/* ── Carte avec hauteur fixe + bouton expand ───────────────── */}
+          {/* Carte */}
           <div
             className={`relative shrink-0 transition-all duration-300 ${
               mapExpanded ? 'h-[65dvh]' : 'h-[42dvh]'
@@ -222,7 +218,6 @@ export default function HomePage() {
               className="h-full w-full"
             />
 
-            {/* Bouton expand/collapse */}
             <button
               onClick={() => setMapExpanded((prev) => !prev)}
               className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white shadow-md border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-all z-10"
@@ -237,9 +232,8 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* ── Liste pharmacies scrollable ───────────────────────────── */}
+          {/* Liste pharmacies */}
           <div className="flex-1 overflow-y-auto">
-            {/* Handle visuel */}
             <div className="flex justify-center py-2 bg-white border-b border-gray-100 shrink-0">
               <div className="w-10 h-1 rounded-full bg-gray-300" />
             </div>
@@ -250,15 +244,24 @@ export default function HomePage() {
                   <LoadingSpinner size="sm" label="Recherche en cours..." />
                 </div>
               ) : pharmacies.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-                  <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <p className="text-sm">
-                    {mapView === 'guard'
-                      ? 'Aucune pharmacie de garde en ce moment'
-                      : 'Aucune pharmacie trouvée dans ce rayon'}
-                  </p>
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100">
+                    <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium text-gray-700">
+                      {mapView === 'guard'
+                        ? 'Aucune pharmacie de garde'
+                        : 'Aucune pharmacie trouvée'}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {mapView === 'guard'
+                        ? 'Il n\'y a pas de pharmacie de garde en ce moment dans votre zone'
+                        : 'Essayez d\'élargir le rayon de recherche'}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -300,8 +303,16 @@ export default function HomePage() {
                     <LoadingSpinner size="md" label="Chargement..." />
                   </div>
                 ) : pharmacies.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-                    <p className="text-sm">Aucune pharmacie trouvée dans ce rayon</p>
+                  <div className="flex flex-col items-center gap-3 py-12 text-center">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100">
+                      <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-medium text-gray-700">Aucune pharmacie trouvée</p>
+                      <p className="text-xs text-gray-400">Essayez de rechercher par nom ou adresse</p>
+                    </div>
                   </div>
                 ) : (
                   pharmacies.map((p) => <PharmacyCard key={p.id} pharmacy={p} />)
@@ -314,13 +325,18 @@ export default function HomePage() {
                 ))}
               </div>
             ) : pharmacySearchResults.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
-                <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm font-medium text-gray-600">
-                  Aucun résultat pour « {pharmacySearch} »
-                </p>
+              <div className="flex flex-col items-center gap-3 py-12 text-center">
+                <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100">
+                  <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium text-gray-700">
+                    Aucun résultat pour « {pharmacySearch} »
+                  </p>
+                  <p className="text-xs text-gray-400">Vérifiez l'orthographe ou essayez un autre quartier</p>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -354,7 +370,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── Bottom nav mobile ─────────────────────────────────────────── */}
+      {/* ── Bottom nav ────────────────────────────────────────────────── */}
       <nav className="flex items-center bg-white border-t border-gray-200 shrink-0 pb-[env(safe-area-inset-bottom)]">
         <BottomNavBtn
           active={activeTab === 'map'}
@@ -380,27 +396,6 @@ export default function HomePage() {
 }
 
 // ── Composants locaux ─────────────────────────────────────────────────────
-const TabButton = ({
-  active, onClick, label, icon,
-}: {
-  active: boolean; onClick: () => void; label: string; icon: string
-}) => (
-  <button
-    onClick={onClick}
-    className={`
-      flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-      transition-all duration-200
-      ${active
-        ? 'bg-green-600 text-white shadow-sm'
-        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-      }
-    `}
-  >
-    <span>{icon}</span>
-    {label}
-  </button>
-)
-
 const FilterButton = ({
   active, onClick, label, badge,
 }: {
