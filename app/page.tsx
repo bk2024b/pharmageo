@@ -151,18 +151,10 @@ export default function HomePage() {
             <button
               onClick={() => setMenuOpen((prev) => !prev)}
               className="flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-              aria-label="Menu"
-              aria-expanded={menuOpen}
             >
-              {menuOpen ? (
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
 
             {menuOpen && (
@@ -244,24 +236,15 @@ export default function HomePage() {
                   <LoadingSpinner size="sm" label="Recherche en cours..." />
                 </div>
               ) : pharmacies.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-12 text-center">
-                  <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100">
-                    <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium text-gray-700">
-                      {mapView === 'guard'
-                        ? 'Aucune pharmacie de garde'
-                        : 'Aucune pharmacie trouvée'}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {mapView === 'guard'
-                        ? 'Il n\'y a pas de pharmacie de garde en ce moment dans votre zone'
-                        : 'Essayez d\'élargir le rayon de recherche'}
-                    </p>
-                  </div>
+                <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
+                  <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <p className="text-sm">
+                    {mapView === 'guard'
+                      ? 'Aucune pharmacie de garde en ce moment'
+                      : 'Aucune pharmacie trouvée dans ce rayon'}
+                  </p>
                 </div>
               ) : (
                 <>
@@ -303,16 +286,8 @@ export default function HomePage() {
                     <LoadingSpinner size="md" label="Chargement..." />
                   </div>
                 ) : pharmacies.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 py-12 text-center">
-                    <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100">
-                      <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium text-gray-700">Aucune pharmacie trouvée</p>
-                      <p className="text-xs text-gray-400">Essayez de rechercher par nom ou adresse</p>
-                    </div>
+                  <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
+                    <p className="text-sm">Aucune pharmacie trouvée dans ce rayon</p>
                   </div>
                 ) : (
                   pharmacies.map((p) => <PharmacyCard key={p.id} pharmacy={p} />)
@@ -325,18 +300,13 @@ export default function HomePage() {
                 ))}
               </div>
             ) : pharmacySearchResults.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-12 text-center">
-                <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100">
-                  <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium text-gray-700">
-                    Aucun résultat pour « {pharmacySearch} »
-                  </p>
-                  <p className="text-xs text-gray-400">Vérifiez l'orthographe ou essayez un autre quartier</p>
-                </div>
+              <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
+                <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-gray-600">
+                  Aucun résultat pour « {pharmacySearch} »
+                </p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -433,4 +403,4 @@ const BottomNavBtn = ({
     <span className="text-lg leading-none">{icon}</span>
     <span>{label}</span>
   </button>
-)
+) 
